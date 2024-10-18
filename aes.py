@@ -77,7 +77,7 @@ def print_expanded_key(expanded_key):
         print(f'w{i}:', bytes_to_hex(word))
 
 # Chave e mensagem em hexadecimal
-chave = "0F1571C947D9E8591CB7ADD6AF7F6798"
+chave = "0F1571C947D9E8590CB7ADD6AF7F6798"
 mensagem = "0123456789ABCDEFFEDCBA9876543210"
 
 # Convertendo chave e mensagem para matrizes transpostas
@@ -333,3 +333,32 @@ new_state = substitute_bytes(state, s_box)
 print("Novo estado após Substitute Bytes:")
 for j in range(4):  # Mudança na ordem para imprimir as colunas
     print(["{:02X}".format(new_state[i][j]) for i in range(4)])  # Mudança na ordem para imprimir as linhas
+
+
+# Step 8, Round 2: Shift rows
+def shift_rows(state):
+    """Realiza o deslocamento das linhas do estado."""
+    # Primeira linha permanece inalterada
+    # Desloca a segunda linha uma posição à esquerda
+    state[1] = state[1][1:] + state[1][:1]  # [C6, 99, 70, 92] -> [99, 70, 92, C6]
+    # Desloca a terceira linha duas posições à esquerda
+    state[2] = state[2][2:] + state[2][:2]  # [99, E5, 51, 16] -> [51, 16, 99, E5]
+    # Desloca a quarta linha três posições à esquerda
+    state[3] = state[3][3:] + state[3][:3]  # [DE, 9D, 75, 99] -> [99, DE, 9D, 75]
+    return state
+
+# Estado após a substituição de bytes (Substitute Bytes)
+state = [
+    [0x4D, 0x76, 0x89, 0x4C],  # Primeira linha (inalterada)
+    [0xC6, 0x99, 0x70, 0x92],  # Segunda linha
+    [0x99, 0xE5, 0x51, 0x16],  # Terceira linha
+    [0xDE, 0x9D, 0x75, 0x99]   # Quarta linha
+]
+
+# Realiza o deslocamento das linhas
+new_state = shift_rows(state)
+
+# Imprime o novo estado após Shift Rows
+print("Novo estado após Shift Rows:")
+for row in new_state:  # Percorre as linhas do estado
+    print(["{:02X}".format(byte) for byte in row])  # Imprime os bytes de cada linha
