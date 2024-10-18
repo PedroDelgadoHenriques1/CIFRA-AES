@@ -248,3 +248,35 @@ mixed_state = mix_columns(state)
 # Exibir o estado após Mix Columns
 for row in mixed_state:
     print(' '.join(format(x, '02X') for x in row))
+
+
+#Step 6, Round 1: Add round key
+def add_round_key(state, round_key):
+    """Aplica a operação XOR entre o estado e a chave da rodada"""
+    for i in range(4):
+        for j in range(4):
+            state[i][j] ^= round_key[i][j]  # XOR entre estado e round key
+    return state
+
+# Estado do bloco após o Mix Columns
+mixed_state = [
+    [0xB9, 0xE4, 0x47, 0xC5],
+    [0x94, 0x8E, 0x20, 0xD6],
+    [0x75, 0x07, 0x8B, 0xC6],
+    [0x75, 0x51, 0x3F, 0x3B]
+]
+
+# Chave da rodada (w4, w5, w6, w7)
+round_key = [
+    [0xDC, 0x90, 0x37, 0xB0],
+    [0x9B, 0x49, 0xDF, 0xE9],
+    [0x87, 0xFE, 0x72, 0x3F],
+    [0x28, 0x81, 0x15, 0xA7]
+]
+
+# Adicionar a chave da rodada ao estado
+result_state = add_round_key(mixed_state, round_key)
+
+# Exibir o estado após Add Round Key
+for row in result_state:
+    print(' '.join(format(x, '02X') for x in row))
