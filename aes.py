@@ -2,7 +2,7 @@ import numpy as np
 
 # Função para converter hex string para matriz 4x4 e transpor linhas e colunas
 def hex_para_matriz_transposta(hex_str):
-    bytes_array = [hex_str[i:i+2] for i in range(0, len(hex_str), 2)]
+    bytes_array = [int(hex_str[i:i + 2], 16) for i in range(0, len(hex_str), 2)]  # Convertendo para inteiro
     matrix = np.array(bytes_array).reshape(4, 4)
     return matrix.T  # Retorna matriz depois de transposição
 
@@ -39,11 +39,15 @@ def rot_word(word):
 
 # Função que converte uma string hex para uma lista de inteiros
 def hex_to_bytes(hex_str):
-    return [int(hex_str[i:i+2], 16) for i in range(0, len(hex_str), 2)]
+    return [int(hex_str[i:i + 2], 16) for i in range(0, len(hex_str), 2)]
 
 # Função que converte uma lista de bytes para uma string hexadecimal
 def bytes_to_hex(byte_list):
-    return ''.join(f'{b:02X}' for b in byte_list)
+    return ' '.join(f'{b:02X}' for b in byte_list)
+
+# Função para adicionar a chave da rodada (XOR com a chave da rodada)
+def add_round_key(state, round_key):
+    return [[state[i][j] ^ round_key[j] for j in range(4)] for i in range(4)]
 
 # Função para expandir a chave AES (Key Expansion)
 def expand_key(key_hex):
@@ -56,8 +60,7 @@ def expand_key(key_hex):
 
     # Expansão da chave para 44 palavras
     for i in range(4, 44):
-        temp = expanded_key[i - 1]
-
+        temp = expanded_key[i - 1][:]  # Copia a última palavra
         if i % 4 == 0:
             temp = sub_word(rot_word(temp))  # Aplica RotWord e SubWord
             temp[0] ^= Rcon[(i // 4) - 1]  # XOR com a constante Rcon
@@ -73,10 +76,11 @@ def print_expanded_key(expanded_key):
     for i, word in enumerate(expanded_key):
         print(f'w{i}:', bytes_to_hex(word))
 
-# Funções anteriores: Convertendo chave e mensagem para matrizes transpostas
+# Chave e mensagem em hexadecimal
 chave = "0F1571C947D9E8591CB7ADD6AF7F6798"
 mensagem = "0123456789ABCDEFFEDCBA9876543210"
 
+# Convertendo chave e mensagem para matrizes transpostas
 mensagem_transposta = hex_para_matriz_transposta(mensagem)
 chave_transposta = hex_para_matriz_transposta(chave)
 
@@ -91,3 +95,40 @@ expanded_key = expand_key(chave)
 
 print("\nChave expandida:")
 print_expanded_key(expanded_key)
+
+# Etapa 2, Rodada 0: Adicionar chave de rodada
+def xor_arrays(block, round_key):
+    # Verificar se o tamanho dos arrays é o mesmo
+    if len(block) != len(round_key):
+        raise ValueError("Os arrays devem ter o mesmo tamanho.")
+    
+    # Fazer a operação XOR para cada byte
+    return [b ^ rk for b, rk in zip(block, round_key)]
+
+def format_as_matrix_corrected(block):
+    # Verificar se o bloco tem 16 bytes
+    if len(block) != 16:
+        raise ValueError("O bloco deve ter 16 bytes.")
+    
+    # Formatar como uma matriz 4x4 (AES usa matriz de colunas)
+    matrix = [block[i::4] for i in range(4)]
+    
+    # Imprimir a matriz formatada
+    print("Estado do bloco:")
+    for row in matrix:
+        print("\t".join([f"{hex(byte)[2:].upper().zfill(2)}" for byte in row]))
+
+# Exemplo de uso
+# Bloco de entrada em bytes
+block = [0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF, 0xEF, 0xCC, 0xBA, 0x98, 0x76, 0x54, 0x32, 0x10]
+
+# Chave expandida (w0, w1, w2, w3) concatenada
+round_key = [0x0F, 0x15, 0x71, 0xC9, 0x47, 0xD9, 0xE8, 0x59, 0x1C, 0xB7, 0xAD, 0xD6, 0xAF, 0x7F, 0x67, 0x98]
+
+# Aplicar a função XOR
+updated_block = xor_arrays(block, round_key)
+
+# Mostrar o resultado como matriz corrigida
+format_as_matrix_corrected(updated_block)
+
+
