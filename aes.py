@@ -76,20 +76,6 @@ RCON = [
     0x20, 0x40, 0x80, 0x1B, 0x36
 ]
 
-# funcoes gerais
-def rotacionar_palavra(word):
-    return word[1:] + word[:1]   #tira do primeiro e coloca no ultimo byte
-
-
-# zfill -> preencher uma string com zeros à esquerda
-
-def sub_bytes(word):
-    return [hex(S_BOX[int(byte, 16)])[2:].upper().zfill(2) for byte in word] #faz a substituição de bytes de acordo com sbox
-
-#faz o xor para definir se ambos os bits são iguais ou diferentes
-def operacao_xor(word1, word2):
-    return [hex(int(word1[i], 16) ^ int(word2[i], 16))[2:].upper().zfill(2) for i in range(4)]
-
 def expandir_chave(key_matrix):
     # Inicializa a lista de palavras a partir da chave
     w = [key_matrix[:, i].tolist() for i in range(4)]
@@ -112,17 +98,6 @@ def expandir_chave(key_matrix):
 
     return expanded_key
 
-# Expandindo a chave
-chave_expandida = expandir_chave(np.array(chave_transposta))
-
-# Imprimindo as palavras da chave expandida
-print("\nChave expandida:")
-for i, word in enumerate(chave_expandida):
-    print(f'w{i}: {" ".join(word)}')
-
-
-state = mensagem_transposta
-
 def adicionar_chave_rodada(state, chave_rodada):
     # Converte state e chave_rodada para arrays NumPy, se ainda não forem
     state = np.array(state)
@@ -142,35 +117,15 @@ def adicionar_chave_rodada(state, chave_rodada):
     
     return resultado_hex.T
 
+# zfill -> preencher uma string com zeros à esquerda
 
-def adiciona_chave_rodada_final(state, chave_rodada):
-    state = state.T
-
-    estado_inteiro = np.vectorize(lambda x: int(x, 16))(state)
-    chave_rodada_inteira = np.vectorize(lambda x: int(x, 16))(chave_rodada)
-    resultado = estado_inteiro ^ chave_rodada_inteira
-    resultado_hex = np.array([[f'{resultado[r, c]:02X}' for c in range(4)] for r in range(4)])
-    
-    # print("Resultado do XOR:", resultado_hex.flatten())
-    return resultado_hex
+def sub_bytes(word):
+    return [hex(S_BOX[int(byte, 16)])[2:].upper().zfill(2) for byte in word] #faz a substituição de bytes de acordo com sbox
 
 
-# Verificando como está a rodada 0
-state = adicionar_chave_rodada(state, chave_transposta)
-print("Rodada 0:", state)
-
-# galouis_multiplicacao                              
-def galouis_multiplicacao(a, b):                        # Função que realiza a multiplicação de dois números no campo de Galois (GF(2^8)). # Utiliza o método de multiplicação bit a bit, verificando os bits de 'b' e ajustando 'a' 
-    p = 0  # Resultado                                  # Conforme necessário, reduzindo 'a' pelo polinômio irreducível 0x1b se o bit mais significativo for 1.
-    for _ in range(8):
-        if b & 1:                                       # Se b for ímpar
-            p ^= a                                      # Adiciona em galouis_multiplicacao(2^8)
-        high_bit = a & 0x80                             # Verifica se o bit significativo é igual a 1
-        a <<= 1                                         # Duplica
-        if high_bit:                                    # Verifica se o bit significativo é igual a 1
-            a ^= 0x1b                                   # faz a operação de diminuição pelo polinômio irreducível
-        b >>= 1                                         # Faz a metade de b
-    return p
+# funcoes gerais
+def rotacionar_palavra(word):
+    return word[1:] + word[:1]   #tira do primeiro e coloca no ultimo byte
 
 # Fazendo operação de mix columns
 def mix_columns(state):
@@ -199,6 +154,56 @@ def mix_columns(state):
     new_state_hex = np.array([[f'{new_state[r, c]:02X}' for c in range(4)] for r in range(4)])
 
     return new_state_hex.T  # Retorna a matriz transposta
+
+
+# galouis_multiplicacao                              
+def galouis_multiplicacao(a, b):                        # Função que realiza a multiplicação de dois números no campo de Galois (GF(2^8)). # Utiliza o método de multiplicação bit a bit, verificando os bits de 'b' e ajustando 'a' 
+    p = 0  # Resultado                                  # Conforme necessário, reduzindo 'a' pelo polinômio irreducível 0x1b se o bit mais significativo for 1.
+    for _ in range(8):
+        if b & 1:                                       # Se b for ímpar
+            p ^= a                                      # Adiciona em galouis_multiplicacao(2^8)
+        high_bit = a & 0x80                             # Verifica se o bit significativo é igual a 1
+        a <<= 1                                         # Duplica
+        if high_bit:                                    # Verifica se o bit significativo é igual a 1
+            a ^= 0x1b                                   # faz a operação de diminuição pelo polinômio irreducível
+        b >>= 1                                         # Faz a metade de b
+    return p
+
+
+
+#faz o xor para definir se ambos os bits são iguais ou diferentes
+def operacao_xor(word1, word2):
+    return [hex(int(word1[i], 16) ^ int(word2[i], 16))[2:].upper().zfill(2) for i in range(4)]
+
+
+# Expandindo a chave
+chave_expandida = expandir_chave(np.array(chave_transposta))
+
+# Imprimindo as palavras da chave expandida
+print("\nChave expandida:")
+for i, word in enumerate(chave_expandida):
+    print(f'w{i}: {" ".join(word)}')
+
+
+state = mensagem_transposta
+
+
+def adiciona_chave_rodada_final(state, chave_rodada):
+    state = state.T
+
+    estado_inteiro = np.vectorize(lambda x: int(x, 16))(state)
+    chave_rodada_inteira = np.vectorize(lambda x: int(x, 16))(chave_rodada)
+    resultado = estado_inteiro ^ chave_rodada_inteira
+    resultado_hex = np.array([[f'{resultado[r, c]:02X}' for c in range(4)] for r in range(4)])
+    
+    # print("Resultado do XOR:", resultado_hex.flatten())
+    return resultado_hex
+
+
+# Verificando como está a rodada 0
+state = adicionar_chave_rodada(state, chave_transposta)
+print("Rodada 0:", state)
+
 
 #->IMPRIMINDO RODADAS<-#
 # RODADA ATUAL DE 1 A 10 #
