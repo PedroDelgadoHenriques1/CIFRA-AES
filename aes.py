@@ -136,9 +136,9 @@ def adicionar_chave_rodada(state, chave_rodada):
     result = state_int ^ round_key_int
 
     # Converte de volta para hexadecimal
-    result_hex = np.array([[f'{result[r][c]:02X}' for c in range(4)] for r in range(4)])
+    resultado_hex = np.array([[f'{result[r][c]:02X}' for c in range(4)] for r in range(4)])
     
-    return result_hex.T
+    return resultado_hex.T
 
 
 def adiciona_chave_rodada_final(state, chave_rodada):
@@ -149,10 +149,10 @@ def adiciona_chave_rodada_final(state, chave_rodada):
 
     result = state_int ^ round_key_int
 
-    result_hex = np.array([[f'{result[r, c]:02X}' for c in range(4)] for r in range(4)])
+    resultado_hex = np.array([[f'{result[r, c]:02X}' for c in range(4)] for r in range(4)])
     
-    # print("Resultado do XOR:", result_hex.flatten())
-    return result_hex
+    # print("Resultado do XOR:", resultado_hex.flatten())
+    return resultado_hex
 
 
 # Verificando como está a rodada 0
@@ -181,19 +181,24 @@ def mix_columns(state):
         [0x03, 0x01, 0x01, 0x02]
     ])
 
+    # Inicializa uma matriz de zeros para armazenar o novo estado
     new_state = np.zeros((4, 4), dtype=int)
+
+    # Percorre as colunas e linhas da matriz de estado
     for c in range(4):
         for r in range(4):
-            new_state[r, c] = (
-                galouis_multiplicacao(matriz_mix_columns[r, 0], int(state[0, c], 16)) ^
-                galouis_multiplicacao(matriz_mix_columns[r, 1], int(state[1, c], 16)) ^
-                galouis_multiplicacao(matriz_mix_columns[r, 2], int(state[2, c], 16)) ^
-                galouis_multiplicacao(matriz_mix_columns[r, 3], int(state[3, c], 16))
-            ) % 0x100 
+            # Calcula a nova palavra na coluna c
+            novo_valor = 0
+            for k in range(4):
+                multiplicacao = galouis_multiplicacao(matriz_mix_columns[r, k], int(state[k, c], 16))
+                novo_valor ^= multiplicacao
+            
+            new_state[r, c] = novo_valor % 0x100  # Aplica módulo 256
 
+    # Converte o novo estado para hexadecimal formatado
     new_state_hex = np.array([[f'{new_state[r, c]:02X}' for c in range(4)] for r in range(4)])
-    
-    return new_state_hex.T
+
+    return new_state_hex.T  # Retorna a matriz transposta
 
 #->IMPRIMINDO RODADAS<-#
 # RODADA ATUAL DE 1 A 10 #
