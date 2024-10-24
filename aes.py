@@ -128,9 +128,11 @@ def adicionar_chave_rodada(state, chave_rodada):
     state = np.array(state)
     chave_rodada = np.array(chave_rodada)
 
-    # Converte o estado e a chave para inteiros
-    estado_inteiro = np.array([[int(state[r][c], 16) for c in range(4)] for r in range(4)])
-    chave_rodada_inteira = np.array([[int(chave_rodada[r][c], 16) for c in range(4)] for r in range(4)])
+    # Converte o estado de hexadecimal para inteiro usando np.vectorize
+    estado_inteiro = np.vectorize(lambda x: int(x, 16))(state)                         #converte os elementos de state e chave_rodada de strings hexadecimais para inteiros.
+
+    # Converte a chave rodada de hexadecimal para inteiro usando np.vectorize
+    chave_rodada_inteira = np.vectorize(lambda x: int(x, 16))(chave_rodada)
 
     # Realiza XOR entre o estado e a chave (inteiros)
     resultado = estado_inteiro ^ chave_rodada_inteira
@@ -144,8 +146,8 @@ def adicionar_chave_rodada(state, chave_rodada):
 def adiciona_chave_rodada_final(state, chave_rodada):
     state = state.T
 
-    estado_inteiro = np.array([[int(state[r, c], 16) for c in range(4)] for r in range(4)])
-    chave_rodada_inteira = np.array([[int(chave_rodada[r, c], 16) for c in range(4)] for r in range(4)])
+    estado_inteiro = np.vectorize(lambda x: int(x, 16))(state)
+    chave_rodada_inteira = np.vectorize(lambda x: int(x, 16))(chave_rodada)
     resultado = estado_inteiro ^ chave_rodada_inteira
     resultado_hex = np.array([[f'{resultado[r, c]:02X}' for c in range(4)] for r in range(4)])
     
