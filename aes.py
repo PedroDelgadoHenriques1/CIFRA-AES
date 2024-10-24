@@ -30,9 +30,6 @@ for row in mensagem_transposta:
 print("\nMatriz transposta da chave:")
 for row in chave_transposta:
     print(row)
-    
-    
-
 
 # Definindo constantes
 Nb = 4  
@@ -64,10 +61,8 @@ RCON = [
     0x20, 0x40, 0x80, 0x1B, 0x36
 ]
 
-def rot_word(word):
-    return word[1:] + word[:1]
 
-def sub_word(word):
+def sub_bytes(word):
     return [hex(S_BOX[int(byte, 16)])[2:].upper().zfill(2) for byte in word]
 
 def sub_bytes(word):
@@ -90,7 +85,7 @@ def expand_key(key_matrix):
         temp = expanded_key[i - 1]
 
         if i % Nk == 0:
-            temp = sub_word(rot_word(temp))
+            temp = sub_bytes(rot_word(temp))
             # Adiciona Rcon
             temp[0] = hex(int(temp[0], 16) ^ RCON[i // Nk - 1])[2:].upper().zfill(2)
 
