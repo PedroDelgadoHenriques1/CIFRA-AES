@@ -70,6 +70,10 @@ def rot_word(word):
 def sub_word(word):
     return [hex(S_BOX[int(byte, 16)])[2:].upper().zfill(2) for byte in word]
 
+def sub_bytes(word):
+    return [hex(S_BOX[int(byte, 16)]).upper()[2:].zfill(2) for byte in word] # substitui cada byte de acordo com a s-box
+
+
 def xor_words(word1, word2):
     return [hex(int(word1[i], 16) ^ int(word2[i], 16))[2:].upper().zfill(2) for i in range(4)]
 
@@ -105,3 +109,105 @@ for i, word in enumerate(chave_expandida):
     print(f'w{i}: {" ".join(word)}')
 
 
+state = mensagem_transposta
+
+def add_round_key(state, round_key):
+    # Converte state e round_key para arrays NumPy, se ainda não forem
+    state = np.array(state)
+    round_key = np.array(round_key)
+
+    # Converte o estado e a chave para inteiros
+    state_int = np.array([[int(state[r][c], 16) for c in range(4)] for r in range(4)])
+    round_key_int = np.array([[int(round_key[r][c], 16) for c in range(4)] for r in range(4)])
+
+    # Realiza XOR entre o estado e a chave (inteiros)
+    result = state_int ^ round_key_int
+
+    # Converte de volta para hexadecimal
+    result_hex = np.array([[f'{result[r][c]:02X}' for c in range(4)] for r in range(4)])
+    
+    return result_hex.T
+
+
+def add_round_key_final(state, round_key):
+    # print("ttEstado antes do XOR:", state.flatten())
+    # print("ttChave antes do XOR:", round_key.flatten())
+    state = state.T
+
+    state_int = np.array([[int(state[r, c], 16) for c in range(4)] for r in range(4)])
+    round_key_int = np.array([[int(round_key[r, c], 16) for c in range(4)] for r in range(4)])
+
+    result = state_int ^ round_key_int
+
+    result_hex = np.array([[f'{result[r, c]:02X}' for c in range(4)] for r in range(4)])
+    
+    # print("Resultado do XOR:", result_hex.flatten())
+    return result_hex
+
+
+# print round 0
+state = add_round_key(state, chave_transposta)
+print("Round 0:", state.flatten())
+
+# gf_mult
+def gf_mult(a, b):
+    p = 0  # Resultado
+    for _ in range(8):
+        if b & 1:  # se b é ímpar
+            p ^= a  # soma em GF(2^8)
+        high_bit = a & 0x80  # verifica se o bit mais significativo é 1
+        a <<= 1  # multiplica a por 2
+        if high_bit:  # se o bit mais significativo era 1
+            a ^= 0x1b  # reduz pelo polinômio irreducível
+        b >>= 1  # divide b por 2
+    return p
+
+# mix columns
+def mix_columns(state):
+    mix_columns_matrix = np.array([
+        [0x02, 0x03, 0x01, 0x01],
+        [0x01, 0x02, 0x03, 0x01],
+        [0x01, 0x01, 0x02, 0x03],
+        [0x03, 0x01, 0x01, 0x02]
+    ])
+
+    new_state = np.zeros((4, 4), dtype=int)
+    for c in range(4):
+        for r in range(4):
+            new_state[r, c] = (
+                gf_mult(mix_columns_matrix[r, 0], int(state[0, c], 16)) ^
+                gf_mult(mix_columns_matrix[r, 1], int(state[1, c], 16)) ^
+                gf_mult(mix_columns_matrix[r, 2], int(state[2, c], 16)) ^
+                gf_mult(mix_columns_matrix[r, 3], int(state[3, c], 16))
+            ) % 0x100 
+
+    new_state_hex = np.array([[f'{new_state[r, c]:02X}' for c in range(4)] for r in range(4)])
+    
+    return new_state_hex.T
+
+# rounds 1 a 10
+for round_number in range(1, 11):
+    state = np.array(sub_bytes(state.flatten().tolist())).reshape(4, 4).T
+    print(f"Round {round_number}, Apos Substitute Bytes:", state.flatten())
+
+    state[1] = np.roll(state[1], -1)
+    state[2] = np.roll(state[2], -2)
+    state[3] = np.roll(state[3], -3)
+    print(f"Round {round_number}, Apos Shift Rows:", state.flatten())
+
+    if round_number < 10:
+        state = mix_columns(state)
+        print(f"Round {round_number}, Apos Mix Columns:", state.flatten())
+
+    if round_number < 10:
+        round_key = chave_expandida[round_number * 4:(round_number + 1) * 4]
+        state = add_round_key(state, np.array(round_key)).T
+        print(f"Round {round_number}, Apos Add Round Key:", state.flatten())
+        
+    else:
+        round_key = chave_expandida[round_number * 4:(round_number + 1) * 4]
+        state = add_round_key_final(state, np.array(round_key))
+        print(f"Round {round_number}, Apos Add Round Key:", state.flatten())
+
+# estado final apos o ultimo round
+print("Estado final:", state.flatten())
