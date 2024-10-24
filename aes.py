@@ -31,14 +31,14 @@ chave_transposta = hex_para_matriz_transposta(chave)
 
 # Fazendo a impressão de matrizes transpostas da mensagem obtidas na tela
 print("====================================================================================================================")
-print("Matriz transposta da mensagem:")
+print("\nResultante de Matriz transposta da mensagem:")
 for row in mensagem_transposta:
     print(row)
 
 print("====================================================================================================================")
 
 # Fazendo a impressão de matrizes transpostas da chave obtidas na tela
-print("\nMatriz transposta da chave:")
+print("\nResultante de Matriz transposta da chave:")
 for row in chave_transposta:
     print(row)
 print("====================================================================================================================")
