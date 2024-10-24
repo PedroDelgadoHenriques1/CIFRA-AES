@@ -120,14 +120,14 @@ for i, word in enumerate(chave_expandida):
 
 state = mensagem_transposta
 
-def adicionar_chave_rodada(state, round_key):
-    # Converte state e round_key para arrays NumPy, se ainda não forem
+def adicionar_chave_rodada(state, chave_rodada):
+    # Converte state e chave_rodada para arrays NumPy, se ainda não forem
     state = np.array(state)
-    round_key = np.array(round_key)
+    chave_rodada = np.array(chave_rodada)
 
     # Converte o estado e a chave para inteiros
     state_int = np.array([[int(state[r][c], 16) for c in range(4)] for r in range(4)])
-    round_key_int = np.array([[int(round_key[r][c], 16) for c in range(4)] for r in range(4)])
+    round_key_int = np.array([[int(chave_rodada[r][c], 16) for c in range(4)] for r in range(4)])
 
     # Realiza XOR entre o estado e a chave (inteiros)
     result = state_int ^ round_key_int
@@ -138,11 +138,11 @@ def adicionar_chave_rodada(state, round_key):
     return result_hex.T
 
 
-def adiciona_chave_rodada_final(state, round_key):
+def adiciona_chave_rodada_final(state, chave_rodada):
     state = state.T
 
     state_int = np.array([[int(state[r, c], 16) for c in range(4)] for r in range(4)])
-    round_key_int = np.array([[int(round_key[r, c], 16) for c in range(4)] for r in range(4)])
+    round_key_int = np.array([[int(chave_rodada[r, c], 16) for c in range(4)] for r in range(4)])
 
     result = state_int ^ round_key_int
 
@@ -156,9 +156,9 @@ def adiciona_chave_rodada_final(state, round_key):
 state = adicionar_chave_rodada(state, chave_transposta)
 print("Rodada 0:", state)
 
-# galouis_multiplicacao
-def galouis_multiplicacao(a, b):
-    p = 0  # Resultado
+# galouis_multiplicacao                              
+def galouis_multiplicacao(a, b):                        # Função que realiza a multiplicação de dois números no campo de Galois (GF(2^8)). # Utiliza o método de multiplicação bit a bit, verificando os bits de 'b' e ajustando 'a' 
+    p = 0  # Resultado                                  # Conforme necessário, reduzindo 'a' pelo polinômio irreducível 0x1b se o bit mais significativo for 1.
     for _ in range(8):
         if b & 1:                                       # Se b for ímpar
             p ^= a                                      # Adiciona em galouis_multiplicacao(2^8)
@@ -171,7 +171,7 @@ def galouis_multiplicacao(a, b):
 
 # mix columns
 def mix_columns(state):
-    mix_columns_matrix = np.array([
+    matriz_mix_columns = np.array([
         [0x02, 0x03, 0x01, 0x01],
         [0x01, 0x02, 0x03, 0x01],
         [0x01, 0x01, 0x02, 0x03],
@@ -182,10 +182,10 @@ def mix_columns(state):
     for c in range(4):
         for r in range(4):
             new_state[r, c] = (
-                galouis_multiplicacao(mix_columns_matrix[r, 0], int(state[0, c], 16)) ^
-                galouis_multiplicacao(mix_columns_matrix[r, 1], int(state[1, c], 16)) ^
-                galouis_multiplicacao(mix_columns_matrix[r, 2], int(state[2, c], 16)) ^
-                galouis_multiplicacao(mix_columns_matrix[r, 3], int(state[3, c], 16))
+                galouis_multiplicacao(matriz_mix_columns[r, 0], int(state[0, c], 16)) ^
+                galouis_multiplicacao(matriz_mix_columns[r, 1], int(state[1, c], 16)) ^
+                galouis_multiplicacao(matriz_mix_columns[r, 2], int(state[2, c], 16)) ^
+                galouis_multiplicacao(matriz_mix_columns[r, 3], int(state[3, c], 16))
             ) % 0x100 
 
     new_state_hex = np.array([[f'{new_state[r, c]:02X}' for c in range(4)] for r in range(4)])
@@ -211,13 +211,13 @@ for rodada_atual in range(1, 11):
         print(f"Rodada {rodada_atual} - Apos Mix Columns:\n", state, "\n")
 
     if rodada_atual < 10:
-        round_key = chave_expandida[rodada_atual * 4:(rodada_atual + 1) * 4]
-        state = adicionar_chave_rodada(state, np.array(round_key)).T
+        chave_rodada = chave_expandida[rodada_atual * 4:(rodada_atual + 1) * 4]
+        state = adicionar_chave_rodada(state, np.array(chave_rodada)).T
         print(f"Rodada {rodada_atual} - Apos Add Rodada chave:\n", state, "\n")
         
     else:
-        round_key = chave_expandida[rodada_atual * 4:(rodada_atual + 1) * 4]
-        state = adiciona_chave_rodada_final(state, np.array(round_key))
+        chave_rodada = chave_expandida[rodada_atual * 4:(rodada_atual + 1) * 4]
+        state = adiciona_chave_rodada_final(state, np.array(chave_rodada))
         print(f"Rodada {rodada_atual} - Apos Add Rodada chave:\n", state, "\n")
 
 # Texto cifrado obtido após o último round
