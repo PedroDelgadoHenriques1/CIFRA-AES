@@ -172,9 +172,9 @@ def galouis_multiplicacao(a, b):                        # Função que realiza a
         b >>= 1                                         # Faz a metade de b
     return p
 
-# mix columns
+# Fazendo operação de mix columns
 def mix_columns(state):
-    matriz_mix_columns = np.array([
+    matriz_mix_columns = np.array([         # transformação linear invertível               
         [0x02, 0x03, 0x01, 0x01],
         [0x01, 0x02, 0x03, 0x01],
         [0x01, 0x01, 0x02, 0x03],
