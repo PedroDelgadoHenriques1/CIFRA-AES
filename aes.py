@@ -92,22 +92,21 @@ def operacao_xor(word1, word2):
 
 def expandir_chave(key_matrix):
     # Inicializa a lista de palavras a partir da chave
-    w = []
-    for i in range(4):
-        w.append(key_matrix[:, i].tolist())
-
-    expanded_key = []
-    expanded_key.extend(w)
+    w = [key_matrix[:, i].tolist() for i in range(4)]
+    expanded_key = w.copy()  # Cria uma cópia da lista inicial
 
     for i in range(Nk, 4 * (Nr + 1)):
-        temp = expanded_key[i - 1]
+        # Pega a palavra anterior
+        temp = expanded_key[i - 1].copy()
 
+        # Aplica a transformação se estamos no múltiplo de Nk
         if i % Nk == 0:
             temp = sub_bytes(rotacionar_palavra(temp))
             # Adiciona Rcon
-            temp[0] = hex(int(temp[0], 16) ^ RCON[i // Nk - 1])[2:].upper().zfill(2)
+            rcon_value = RCON[i // Nk - 1]
+            temp[0] = hex(int(temp[0], 16) ^ rcon_value)[2:].upper().zfill(2)
 
-        # Gera a nova palavra
+        # Gera a nova palavra usando XOR
         new_word = operacao_xor(expanded_key[i - Nk], temp)
         expanded_key.append(new_word)
 
@@ -207,7 +206,7 @@ for rodada_atual in range(1, 11):
 
     # Aplicar a operação ShiftRows
     for i in range(1, 4):
-        state[i] = np.roll(state[i], -i)                                            #Desloca linha 1 2 e 3 para a esquerda e a 0 permanece a mesma
+        state[i] = np.roll(state[i], -i)                                            #Deslocar linha 1 2 e 3 para a esquerda e a 0 permanece a mesma
     print(f"Rodada {rodada_atual} - Apos Shift Rows:\n", state, "\n")
 
     # Aplicar MixColumns se não for a última rodada
