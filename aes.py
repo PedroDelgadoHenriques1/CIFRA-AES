@@ -30,14 +30,18 @@ mensagem_transposta = hex_para_matriz_transposta(mensagem)
 chave_transposta = hex_para_matriz_transposta(chave)
 
 # Fazendo a impressão de matrizes transpostas da mensagem obtidas na tela
+print("====================================================================================================================")
 print("Matriz transposta da mensagem:")
 for row in mensagem_transposta:
     print(row)
+
+print("====================================================================================================================")
 
 # Fazendo a impressão de matrizes transpostas da chave obtidas na tela
 print("\nMatriz transposta da chave:")
 for row in chave_transposta:
     print(row)
+print("====================================================================================================================")
 
 # Definindo constantes
 Nb = 4                          #Nb = 4: Número de colunas no bloco de estado (4 colunas, totalizando 16 bytes).
@@ -83,10 +87,10 @@ def sub_bytes(word):
     return [hex(S_BOX[int(byte, 16)])[2:].upper().zfill(2) for byte in word] #faz a substituição de bytes de acordo com sbox
 
 #faz o xor para definir se ambos os bits são iguais ou diferentes
-def xor_words(word1, word2):
+def operacao_xor(word1, word2):
     return [hex(int(word1[i], 16) ^ int(word2[i], 16))[2:].upper().zfill(2) for i in range(4)]
 
-def expand_key(key_matrix):
+def expandir_chave(key_matrix):
     # Inicializa a lista de palavras a partir da chave
     w = []
     for i in range(4):
@@ -104,13 +108,13 @@ def expand_key(key_matrix):
             temp[0] = hex(int(temp[0], 16) ^ RCON[i // Nk - 1])[2:].upper().zfill(2)
 
         # Gera a nova palavra
-        new_word = xor_words(expanded_key[i - Nk], temp)
+        new_word = operacao_xor(expanded_key[i - Nk], temp)
         expanded_key.append(new_word)
 
     return expanded_key
 
 # Expandindo a chave
-chave_expandida = expand_key(np.array(chave_transposta))
+chave_expandida = expandir_chave(np.array(chave_transposta))
 
 # Imprimindo as palavras da chave expandida
 print("\nChave expandida:")
@@ -192,33 +196,34 @@ def mix_columns(state):
     
     return new_state_hex.T
 
-# steps passando de 1 até 10
-
+#->IMPRIMINDO RODADAS<-#
+# RODADA ATUAL DE 1 A 10 #
 
 for rodada_atual in range(1, 11):
-    state = np.array(sub_bytes(state.flatten().tolist())).reshape(4, 4).T
-    print(f"Rodada {rodada_atual} - Apos Substitute Bytes: \n", state, "\n")
+    # Aplicar a operação SubBytes
+    state = np.array(sub_bytes(state.flatten().tolist())).reshape(4, 4).T                               # Operação SubBytes: Substitui cada byte do bloco de estado usando uma S-Box,
+    print(f"Rodada {rodada_atual} - Apos Substitute Bytes: \n", state, "\n")                            # aplicando uma transformação não linear que confunde os dados e aumenta a segurança do AES.
     print("====================================================================================================================")
 
-    state[1] = np.roll(state[1], -1)
-    state[2] = np.roll(state[2], -2)   #rotacionam os elementos das linhas 1, 2 e 3 da matriz state para a esquerda em 1, 2 e 3 posições, respectivamente.
-    state[3] = np.roll(state[3], -3)
-    
+    # Aplicar a operação ShiftRows
+    for i in range(1, 4):
+        state[i] = np.roll(state[i], -i)                                            #Desloca linha 1 2 e 3 para a esquerda e a 0 permanece a mesma
     print(f"Rodada {rodada_atual} - Apos Shift Rows:\n", state, "\n")
 
+    # Aplicar MixColumns se não for a última rodada
     if rodada_atual < 10:
         state = mix_columns(state)
         print(f"Rodada {rodada_atual} - Apos Mix Columns:\n", state, "\n")
 
+    # Expandir a chave e adicionar à matriz state
+    chave_rodada = chave_expandida[rodada_atual * 4:(rodada_atual + 1) * 4]
     if rodada_atual < 10:
-        chave_rodada = chave_expandida[rodada_atual * 4:(rodada_atual + 1) * 4]
         state = adicionar_chave_rodada(state, np.array(chave_rodada)).T
-        print(f"Rodada {rodada_atual} - Apos Add Rodada chave:\n", state, "\n")
-        
     else:
-        chave_rodada = chave_expandida[rodada_atual * 4:(rodada_atual + 1) * 4]
         state = adiciona_chave_rodada_final(state, np.array(chave_rodada))
-        print(f"Rodada {rodada_atual} - Apos Add Rodada chave:\n", state, "\n")
+
+    print(f"Rodada {rodada_atual} - Apos Add Rodada chave:\n", state, "\n")
+
 
 # Texto cifrado obtido após o último round
 print("Texto cifrado :\n", state)
