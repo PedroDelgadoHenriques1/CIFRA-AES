@@ -129,14 +129,14 @@ def adicionar_chave_rodada(state, chave_rodada):
     chave_rodada = np.array(chave_rodada)
 
     # Converte o estado e a chave para inteiros
-    state_int = np.array([[int(state[r][c], 16) for c in range(4)] for r in range(4)])
-    round_key_int = np.array([[int(chave_rodada[r][c], 16) for c in range(4)] for r in range(4)])
+    estado_inteiro = np.array([[int(state[r][c], 16) for c in range(4)] for r in range(4)])
+    chave_rodada_inteira = np.array([[int(chave_rodada[r][c], 16) for c in range(4)] for r in range(4)])
 
     # Realiza XOR entre o estado e a chave (inteiros)
-    result = state_int ^ round_key_int
+    resultado = estado_inteiro ^ chave_rodada_inteira
 
     # Converte de volta para hexadecimal
-    resultado_hex = np.array([[f'{result[r][c]:02X}' for c in range(4)] for r in range(4)])
+    resultado_hex = np.array([[f'{resultado[r][c]:02X}' for c in range(4)] for r in range(4)])
     
     return resultado_hex.T
 
@@ -144,12 +144,10 @@ def adicionar_chave_rodada(state, chave_rodada):
 def adiciona_chave_rodada_final(state, chave_rodada):
     state = state.T
 
-    state_int = np.array([[int(state[r, c], 16) for c in range(4)] for r in range(4)])
-    round_key_int = np.array([[int(chave_rodada[r, c], 16) for c in range(4)] for r in range(4)])
-
-    result = state_int ^ round_key_int
-
-    resultado_hex = np.array([[f'{result[r, c]:02X}' for c in range(4)] for r in range(4)])
+    estado_inteiro = np.array([[int(state[r, c], 16) for c in range(4)] for r in range(4)])
+    chave_rodada_inteira = np.array([[int(chave_rodada[r, c], 16) for c in range(4)] for r in range(4)])
+    resultado = estado_inteiro ^ chave_rodada_inteira
+    resultado_hex = np.array([[f'{resultado[r, c]:02X}' for c in range(4)] for r in range(4)])
     
     # print("Resultado do XOR:", resultado_hex.flatten())
     return resultado_hex
