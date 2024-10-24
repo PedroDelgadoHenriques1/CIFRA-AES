@@ -40,9 +40,11 @@ for row in chave_transposta:
     print(row)
 
 # Definindo constantes
-Nb = 4  
-Nk = 4  
-Nr = 10 
+Nb = 4                          #Nb = 4: Número de colunas no bloco de estado (4 colunas, totalizando 16 bytes).
+Nk = 4                          #Nk = 4: Número de palavras de chave para AES-128 (4 palavras de 32 bits, totalizando 128 bits).
+Nr = 10                         #Nr = 10: Número de rodadas de processamento durante a criptografia para AES-128 (10 rodadas).
+
+
 
 #Tabela S-Box
 S_BOX = [
@@ -75,13 +77,12 @@ def rotacionar_palavra(word):
     return word[1:] + word[:1]   #tira do primeiro e coloca no ultimo byte
 
 
-def sub_bytes(word):
-    return [hex(S_BOX[int(byte, 16)])[2:].upper().zfill(2) for byte in word]
+# zfill -> preencher uma string com zeros à esquerda
 
 def sub_bytes(word):
-    return [hex(S_BOX[int(byte, 16)]).upper()[2:].zfill(2) for byte in word] # substitui cada byte de acordo com a s-box
+    return [hex(S_BOX[int(byte, 16)])[2:].upper().zfill(2) for byte in word] #faz a substituição de bytes de acordo com sbox
 
-
+#faz o xor para definir se ambos os bits são iguais ou diferentes
 def xor_words(word1, word2):
     return [hex(int(word1[i], 16) ^ int(word2[i], 16))[2:].upper().zfill(2) for i in range(4)]
 
@@ -119,7 +120,7 @@ for i, word in enumerate(chave_expandida):
 
 state = mensagem_transposta
 
-def add_round_key(state, round_key):
+def adicionar_chave_rodada(state, round_key):
     # Converte state e round_key para arrays NumPy, se ainda não forem
     state = np.array(state)
     round_key = np.array(round_key)
@@ -137,7 +138,7 @@ def add_round_key(state, round_key):
     return result_hex.T
 
 
-def add_round_key_final(state, round_key):
+def adiciona_chave_rodada_final(state, round_key):
     state = state.T
 
     state_int = np.array([[int(state[r, c], 16) for c in range(4)] for r in range(4)])
@@ -151,21 +152,21 @@ def add_round_key_final(state, round_key):
     return result_hex
 
 
-# print round 0
-state = add_round_key(state, chave_transposta)
+# Verificando como está a rodada 0
+state = adicionar_chave_rodada(state, chave_transposta)
 print("Rodada 0:", state)
 
 # galouis_multiplicacao
 def galouis_multiplicacao(a, b):
     p = 0  # Resultado
     for _ in range(8):
-        if b & 1:  # se b é ímpar
-            p ^= a  # soma em GF(2^8)
-        high_bit = a & 0x80  # verifica se o bit mais significativo é 1
-        a <<= 1  # multiplica a por 2
-        if high_bit:  # se o bit mais significativo era 1
-            a ^= 0x1b  # reduz pelo polinômio irreducível
-        b >>= 1  # divide b por 2
+        if b & 1:                                       # Se b for ímpar
+            p ^= a                                      # Adiciona em galouis_multiplicacao(2^8)
+        high_bit = a & 0x80                             # Verifica se o bit significativo é igual a 1
+        a <<= 1                                         # Duplica
+        if high_bit:                                    # Verifica se o bit significativo é igual a 1
+            a ^= 0x1b                                   # faz a operação de diminuição pelo polinômio irreducível
+        b >>= 1                                         # Faz a metade de b
     return p
 
 # mix columns
@@ -194,30 +195,30 @@ def mix_columns(state):
 # steps passando de 1 até 10
 
 
-for round_number in range(1, 11):
+for rodada_atual in range(1, 11):
     state = np.array(sub_bytes(state.flatten().tolist())).reshape(4, 4).T
-    print(f"Rodada {round_number}, Apos Substitute Bytes: \n", state)
-    print("================================================================================")
+    print(f"Rodada {rodada_atual} - Apos Substitute Bytes: \n", state, "\n")
+    print("====================================================================================================================")
 
     state[1] = np.roll(state[1], -1)
-    state[2] = np.roll(state[2], -2)
+    state[2] = np.roll(state[2], -2)   #rotacionam os elementos das linhas 1, 2 e 3 da matriz state para a esquerda em 1, 2 e 3 posições, respectivamente.
     state[3] = np.roll(state[3], -3)
     
-    print(f"Rodada {round_number}, Apos Shift Rows:\n", state)
+    print(f"Rodada {rodada_atual} - Apos Shift Rows:\n", state, "\n")
 
-    if round_number < 10:
+    if rodada_atual < 10:
         state = mix_columns(state)
-        print(f"Rodada {round_number}, Apos Mix Columns:\n", state)
+        print(f"Rodada {rodada_atual} - Apos Mix Columns:\n", state, "\n")
 
-    if round_number < 10:
-        round_key = chave_expandida[round_number * 4:(round_number + 1) * 4]
-        state = add_round_key(state, np.array(round_key)).T
-        print(f"Rodada {round_number}, Apos Add Rodada chave:\n", state)
+    if rodada_atual < 10:
+        round_key = chave_expandida[rodada_atual * 4:(rodada_atual + 1) * 4]
+        state = adicionar_chave_rodada(state, np.array(round_key)).T
+        print(f"Rodada {rodada_atual} - Apos Add Rodada chave:\n", state, "\n")
         
     else:
-        round_key = chave_expandida[round_number * 4:(round_number + 1) * 4]
-        state = add_round_key_final(state, np.array(round_key))
-        print(f"Rodada {round_number}, Apos Add Rodada chave:\n", state)
+        round_key = chave_expandida[rodada_atual * 4:(rodada_atual + 1) * 4]
+        state = adiciona_chave_rodada_final(state, np.array(round_key))
+        print(f"Rodada {rodada_atual} - Apos Add Rodada chave:\n", state, "\n")
 
 # Texto cifrado obtido após o último round
 print("Texto cifrado :\n", state)
