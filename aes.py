@@ -205,19 +205,19 @@ def mix_columns(state):
 
 for rodada_atual in range(1, 11):
     # Aplicar a operação SubBytes
-    state = np.array(sub_bytes(state.flatten().tolist())).reshape(4, 4).T                               # Operação SubBytes: Substitui cada byte do bloco de estado usando uma S-Box,
-    print(f"Rodada {rodada_atual} - Apos Substitute Bytes: \n", state, "\n")                            # aplicando uma transformação não linear que confunde os dados e aumenta a segurança do AES.
+    state = np.array(sub_bytes(state.flatten().tolist())).reshape(4, 4).T                 # Operação SubBytes: Substitui cada byte do bloco de estado usando uma S-Box,
+    print(f"Rodada {rodada_atual} - Resultado Aplicando SubBytes: \n", state, "\n")       # aplicando uma transformação não linear que confunde os dados e aumenta a segurança do AES.
     print("====================================================================================================================")
 
     # Aplicar a operação ShiftRows
     for i in range(1, 4):
-        state[i] = np.roll(state[i], -i)                                            #Deslocar linha 1 2 e 3 para a esquerda e a 0 permanece a mesma
-    print(f"Rodada {rodada_atual} - Apos Shift Rows:\n", state, "\n")
+        state[i] = np.roll(state[i], -i)                                                  # Deslocar linha 1 2 e 3 para a esquerda e a 0 permanece a mesma
+    print(f"Rodada {rodada_atual} - Resultado Aplicando ShiftRows:\n", state, "\n")
 
     # Aplicar MixColumns se não for a última rodada
     if rodada_atual < 10:
         state = mix_columns(state)
-        print(f"Rodada {rodada_atual} - Apos Mix Columns:\n", state, "\n")
+        print(f"Rodada {rodada_atual} - Resultado Aplicando MixColumns:\n", state, "\n")
 
     # Expandir a chave e adicionar à matriz state
     chave_rodada = chave_expandida[rodada_atual * 4:(rodada_atual + 1) * 4]
@@ -226,8 +226,8 @@ for rodada_atual in range(1, 11):
     else:
         state = adiciona_chave_rodada_final(state, np.array(chave_rodada))
 
-    print(f"Rodada {rodada_atual} - Apos Add Rodada chave:\n", state, "\n")
+    print(f"Rodada {rodada_atual} - Resultado Adicionando chave de rodada:\n", state, "\n")
 
 
 # Texto cifrado obtido após o último round
-print("Texto cifrado :\n", state)
+print("Resultado final de texto cifrado :\n", state)
