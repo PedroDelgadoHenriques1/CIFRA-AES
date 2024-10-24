@@ -4,6 +4,13 @@ import numpy as np
 chave = "0F1571C947D9E8590CB7ADD6AF7F6798"
 mensagem = "0123456789ABCDEFFEDCBA9876543210"
 
+"""
+    A função reshape do NumPy altera a forma de um array sem mudar seus dados.
+    - O número total de elementos deve permanecer o mesmo.
+    - Sintaxe: novo_array = original_array.reshape(nova_forma).
+    - Retorna uma nova visão do array original, podendo refletir alterações.
+    """
+
 # Função para converter hex string para matriz 4x4 e transpor linhas e colunas
 def hex_para_matriz_transposta(hex_str):
     # Convertendo para inteiro
@@ -22,11 +29,12 @@ def hex_para_matriz_transposta(hex_str):
 mensagem_transposta = hex_para_matriz_transposta(mensagem)
 chave_transposta = hex_para_matriz_transposta(chave)
 
-# Imprimindo as matrizes transpostas
+# Fazendo a impressão de matrizes transpostas da mensagem obtidas na tela
 print("Matriz transposta da mensagem:")
 for row in mensagem_transposta:
     print(row)
 
+# Fazendo a impressão de matrizes transpostas da chave obtidas na tela
 print("\nMatriz transposta da chave:")
 for row in chave_transposta:
     print(row)
@@ -36,7 +44,7 @@ Nb = 4
 Nk = 4  
 Nr = 10 
 
-# Tabelas S-Box e Rcon (apenas algumas linhas para simplificação)
+#Tabela S-Box
 S_BOX = [
     0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
     0xCA, 0x82, 0xC9, 0x7D, 0xFA, 0x59, 0x47, 0xF0, 0xAD, 0xD4, 0xA2, 0xAF, 0x9C, 0xA4, 0x72, 0xC0,
@@ -56,10 +64,15 @@ S_BOX = [
     0x8C, 0xA1, 0x89, 0x0D, 0xBF, 0xE6, 0x42, 0x68, 0x41, 0x99, 0x2D, 0x0F, 0xB0, 0x54, 0xBB, 0x16
     ]
 
+#Tabela Rcon
 RCON = [
     0x01, 0x02, 0x04, 0x08, 0x10, 
     0x20, 0x40, 0x80, 0x1B, 0x36
 ]
+
+# funcoes gerais
+def rotacionar_palavra(word):
+    return word[1:] + word[:1]   #tira do primeiro e coloca no ultimo byte
 
 
 def sub_bytes(word):
@@ -85,7 +98,7 @@ def expand_key(key_matrix):
         temp = expanded_key[i - 1]
 
         if i % Nk == 0:
-            temp = sub_bytes(rot_word(temp))
+            temp = sub_bytes(rotacionar_palavra(temp))
             # Adiciona Rcon
             temp[0] = hex(int(temp[0], 16) ^ RCON[i // Nk - 1])[2:].upper().zfill(2)
 
@@ -125,8 +138,6 @@ def add_round_key(state, round_key):
 
 
 def add_round_key_final(state, round_key):
-    # print("ttEstado antes do XOR:", state.flatten())
-    # print("ttChave antes do XOR:", round_key.flatten())
     state = state.T
 
     state_int = np.array([[int(state[r, c], 16) for c in range(4)] for r in range(4)])
@@ -142,10 +153,10 @@ def add_round_key_final(state, round_key):
 
 # print round 0
 state = add_round_key(state, chave_transposta)
-print("Round 0:", state.flatten())
+print("Rodada 0:", state)
 
-# gf_mult
-def gf_mult(a, b):
+# galouis_multiplicacao
+def galouis_multiplicacao(a, b):
     p = 0  # Resultado
     for _ in range(8):
         if b & 1:  # se b é ímpar
@@ -170,39 +181,43 @@ def mix_columns(state):
     for c in range(4):
         for r in range(4):
             new_state[r, c] = (
-                gf_mult(mix_columns_matrix[r, 0], int(state[0, c], 16)) ^
-                gf_mult(mix_columns_matrix[r, 1], int(state[1, c], 16)) ^
-                gf_mult(mix_columns_matrix[r, 2], int(state[2, c], 16)) ^
-                gf_mult(mix_columns_matrix[r, 3], int(state[3, c], 16))
+                galouis_multiplicacao(mix_columns_matrix[r, 0], int(state[0, c], 16)) ^
+                galouis_multiplicacao(mix_columns_matrix[r, 1], int(state[1, c], 16)) ^
+                galouis_multiplicacao(mix_columns_matrix[r, 2], int(state[2, c], 16)) ^
+                galouis_multiplicacao(mix_columns_matrix[r, 3], int(state[3, c], 16))
             ) % 0x100 
 
     new_state_hex = np.array([[f'{new_state[r, c]:02X}' for c in range(4)] for r in range(4)])
     
     return new_state_hex.T
 
-# rounds 1 a 10
+# steps passando de 1 até 10
+
+
 for round_number in range(1, 11):
     state = np.array(sub_bytes(state.flatten().tolist())).reshape(4, 4).T
-    print(f"Round {round_number}, Apos Substitute Bytes:", state.flatten())
+    print(f"Rodada {round_number}, Apos Substitute Bytes: \n", state)
+    print("================================================================================")
 
     state[1] = np.roll(state[1], -1)
     state[2] = np.roll(state[2], -2)
     state[3] = np.roll(state[3], -3)
-    print(f"Round {round_number}, Apos Shift Rows:", state.flatten())
+    
+    print(f"Rodada {round_number}, Apos Shift Rows:\n", state)
 
     if round_number < 10:
         state = mix_columns(state)
-        print(f"Round {round_number}, Apos Mix Columns:", state.flatten())
+        print(f"Rodada {round_number}, Apos Mix Columns:\n", state)
 
     if round_number < 10:
         round_key = chave_expandida[round_number * 4:(round_number + 1) * 4]
         state = add_round_key(state, np.array(round_key)).T
-        print(f"Round {round_number}, Apos Add Round Key:", state.flatten())
+        print(f"Rodada {round_number}, Apos Add Rodada chave:\n", state)
         
     else:
         round_key = chave_expandida[round_number * 4:(round_number + 1) * 4]
         state = add_round_key_final(state, np.array(round_key))
-        print(f"Round {round_number}, Apos Add Round Key:", state.flatten())
+        print(f"Rodada {round_number}, Apos Add Rodada chave:\n", state)
 
-# estado final apos o ultimo round
-print("Estado final:", state.flatten())
+# Texto cifrado obtido após o último round
+print("Texto cifrado :\n", state)
